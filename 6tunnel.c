@@ -575,7 +575,7 @@ int main(int argc, char **argv)
 
 	char *local_host = NULL;
 	char *tmp;
-	const char *username = NULL;
+	const char *userName = NULL;
 
 	struct addrinfo *ai;
 	struct addrinfo *ai_ptr;
@@ -623,7 +623,7 @@ int main(int argc, char **argv)
 				hexdump = 1;
 				break;
 			case 'u':
-				username = optarg;
+				userName = optarg;
 				break;
 			case 'm':
 				source_map_file = optarg;
@@ -656,11 +656,11 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (username != NULL) {
-		pw = getpwnam(username);
+	if (userName != NULL) {
+		pw = getpwnam(userName);
 
 		if (pw == NULL) {
-			fprintf(stderr, "%s: unknown user %s\n", argv[0], username);
+			fprintf(stderr, "%s: unknown user %s\n", argv[0], userName);
 			exit(1);
 		}
 	}
