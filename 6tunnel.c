@@ -1,19 +1,19 @@
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pwd.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <netdb.h>
 #include <string.h>
-#include <sys/types.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
+#include <sys/types.h>
 #include <sys/wait.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <errno.h>
-#include <ctype.h>
-#include <pwd.h>
 #include <time.h>
+#include <unistd.h>
 
 #define debug(x...) do { \
 	if (verbose) \
@@ -562,18 +562,27 @@ void sigterm()
 
 int main(int argc, char **argv)
 {
-	int force = 0, listen_fd, single_connection = 0, jeden = 1, local_port;
-	int detach = 1, sa_len, conn_limit = 0, optc;
-	const char *username = NULL;
+	int detach = 1; 
+	int force = 0; 
+    int conn_limit = 0; 
+    int jeden = 1; 
+    int listen_fd; 
+    int local_port;
+    int optc;
+    int sa_len; 
+    int single_connection = 0;
+	int source_hint;
+
 	char *local_host = NULL;
+	char *tmp;
+	const char *username = NULL;
+
 	struct addrinfo *ai;
 	struct addrinfo *ai_ptr;
+	struct passwd *pw = NULL;
 	struct sockaddr *sa;
 	struct sockaddr_in laddr;
 	struct sockaddr_in6 laddr6;
-	struct passwd *pw = NULL;
-	char *tmp;
-	int source_hint;
 
 	while ((optc = getopt(argc, argv, "1dv46fHs:l:I:i:hu:m:L:A:p:")) != -1) {
 		switch (optc) {
