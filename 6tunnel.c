@@ -182,16 +182,23 @@ const char *source_map_find(const char *ipv4)
 	return source_host;
 }
 
+// called from main once 
 void make_tunnel(int rsock, const char *client_addr)
 {
-	char buf[4096], *outbuf = NULL, *inbuf = NULL;
-	int sock = -1, outlen = 0, inlen = 0;
-	struct sockaddr *sa = NULL;
+	char buf[4096]; 
 	const char *source;
-	struct addrinfo *connect_ai = NULL;
-	struct addrinfo *bind_ai = NULL;
-	struct addrinfo *ai_ptr;
+    char *inbuf = NULL;
+    char *outbuf = NULL; 
+
+	int sock = -1; 
 	int source_hint;
+    int inlen = 0;
+    int outlen = 0; 
+
+	struct addrinfo *ai_ptr;
+	struct addrinfo *bind_ai = NULL;
+	struct addrinfo *connect_ai = NULL;
+	struct sockaddr *sa = NULL;
 
 	if (source_map != NULL) {
 		source = source_map_find(client_addr);
@@ -562,15 +569,16 @@ void sigterm()
 
 int main(int argc, char **argv)
 {
+    int hexDump = 0;
 	int detach = 1; 
 	int force = 0; 
-    int conn_limit = 0; 
+    int connectionLimit = 0; 
     int jeden = 1; 
     int listen_fd; 
     int local_port;
     int optc;
     int sa_len; 
-    int single_connection = 0;
+    int singleConnection = 0;
 	int source_hint;
 
 	char *local_host = NULL;
@@ -587,7 +595,7 @@ int main(int argc, char **argv)
 	while ((optc = getopt(argc, argv, "1dv46fHs:l:I:i:hu:m:L:A:p:")) != -1) {
 		switch (optc) {
 			case '1':
-				single_connection = 1;
+				singleConnection = 1;
 				break;
 			case 'd':
 				detach = 0;
@@ -602,14 +610,17 @@ int main(int argc, char **argv)
 			case '6':
 				local_hint = AF_INET6;
 				break;
+			case 'f':
+				force = 1;
+				break;
+			case 'H':
+				fprintf(stderr, "%s: warning: -H is deprecated, please use proper combination of -4 and -6.\n", argv[0]);
+				break;
 			case 's':
 				source_host = optarg;
 				break;
 			case 'l':
 				local_host = optarg;
-				break;
-			case 'f':
-				force = 1;
 				break;
 			case 'i':
 				irc_pass = xstrdup(optarg);
@@ -620,7 +631,7 @@ int main(int argc, char **argv)
 				clear_argv(argv[optind - 1]);
 				break;
 			case 'h':
-				hexdump = 1;
+				hexDump = 1;
 				break;
 			case 'u':
 				userName = optarg;
@@ -629,34 +640,42 @@ int main(int argc, char **argv)
 				source_map_file = optarg;
 				break;
 			case 'L':
-				conn_limit = atoi(optarg);
+				connectionLimit = atoi(optarg);
 				break;
 			case 'p':
 				pid_file = optarg;
-				break;
-			case 'H':
-				fprintf(stderr, "%s: warning: -H is deprecated, please use proper combination of -4 and -6.\n", argv[0]);
 				break;
 			default:
 				return 1;
 		}
 	}
 
-	if (hexdump)
-		verbose = 1;
+    if (hexDump)
+    {
+        verbose = 1;
+    }
 
-	if (verbose)
-		detach = 0;
+    if (verbose)
+    {
+        detach = 0;
+    }
 
-	if (detach)
-		verbose = 0;
+    if (detach)
+    {
+        verbose = 0;
+    }
 
-	if (argc - optind < 2) {
-		usage(argv[0]);
-		exit(1);
-	}
+    if (argc - optind < 2)
+    {
+        usage(argv[0]);
+        exit(1);
+    }
 
 	if (userName != NULL) {
+
+        // getpwnam() function returns a pointer to a structure containing the 
+        // broken-out fields of the record in the password database that matches
+        // the username name.
 		pw = getpwnam(userName);
 
 		if (pw == NULL) {
@@ -862,14 +881,14 @@ int main(int argc, char **argv)
 
 		debug("<%d> connection from %s,%d", client_fd, client_addr, ntohs(client_port));
 
-		if (conn_limit && (conn_count >= conn_limit)) {
+		if (connectionLimit && (conn_count >= connectionLimit)) {
 			debug(" -- rejected due to limit.\n");
 			shutdown(client_fd, 2);
 			close(client_fd);
 			continue;
 		}
 
-		if (conn_limit) {
+		if (connectionLimit) {
 			conn_count++;
 			debug(" (no. %d)", conn_count);
 		}
@@ -897,12 +916,11 @@ int main(int argc, char **argv)
 		close(client_fd);
 		free(client_addr);
 
-		if (single_connection) {
+		if (singleConnection) {
 			shutdown(listen_fd, 2);
 			close(listen_fd);
 			exit(0);
 		}
-
 	}
 
 	close(listen_fd);
